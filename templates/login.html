@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ログイン｜企画管理ツール</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=10">
+</head>
+<body class="login-body">
+  <form class="login-card" method="post" action="{{ url_for('do_login') }}">
+    <div class="login-logo">📋</div>
+    <h1>企画管理ツール</h1>
+    <p class="login-lead">あなたはどちらですか？</p>
+
+    <div class="login-users">
+      {% for u in users %}
+      <button class="login-user-btn" type="submit" name="user" value="{{ u.key }}">
+        {{ u.name }}
+      </button>
+      {% endfor %}
+    </div>
+
+    {% if error %}<p class="login-error">{{ error }}</p>{% endif %}
+  </form>
+</body>
+</html>

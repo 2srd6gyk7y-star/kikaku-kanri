@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-store">
+<title>企画管理ツール</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=10">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">📋 企画管理</div>
+  <div class="topbar-right">
+    <span class="me-chip">{{ me.name }}</span>
+    <a class="btn btn-ghost btn-sm" href="{{ url_for('logout') }}">ログアウト</a>
+  </div>
+</header>
+
+<main class="container">
+
+  <section class="filters">
+    <div class="filter-row">
+      <span class="filter-title">区分</span>
+      <div class="chips" id="filter-kind"></div>
+    </div>
+    <div class="filter-row">
+      <span class="filter-title">形式</span>
+      <div class="chips" id="filter-type"></div>
+    </div>
+    <div class="filter-row">
+      <span class="filter-title">状態</span>
+      <div class="chips" id="filter-status"></div>
+    </div>
+  </section>
+
+  <div class="toolbar">
+    <button id="btn-new" class="btn btn-primary">＋ 新規企画</button>
+    <input id="q" class="input search" type="search" placeholder="タイトル・台本から検索">
+    <span id="count" class="count"></span>
+  </div>
+
+  <div id="list" class="grid"></div>
+  <p id="empty" class="empty" hidden>該当する企画がありません。</p>
+
+  <section class="activity">
+    <div class="activity-head">
+      <h2 class="activity-title">更新履歴</h2>
+      <button id="btn-clear-activity" class="btn btn-ghost btn-sm">履歴を消す</button>
+    </div>
+    <ul id="activity-list" class="activity-list"></ul>
+  </section>
+</main>
+
+<!-- ============ 詳細モーダル ============ -->
+<div class="modal" id="modal-detail" hidden>
+  <div class="modal-backdrop" data-close></div>
+  <div class="modal-panel">
+    <header class="modal-head">
+      <div id="detail-badges" class="badges"></div>
+      <button class="icon-btn" data-close aria-label="閉じる">✕</button>
+    </header>
+    <div class="modal-body">
+      <h2 id="detail-title" class="detail-title"></h2>
+      <p id="detail-meta" class="detail-meta"></p>
+
+      <div id="detail-ref-wrap" class="detail-block">
+        <h3 class="detail-h3">参考動画</h3>
+        <p id="detail-ref"></p>
+      </div>
+
+      <div class="detail-block">
+        <h3 class="detail-h3">台本</h3>
+        <p id="detail-script" class="pre"></p>
+      </div>
+    </div>
+    <footer class="modal-foot">
+      <button id="btn-approve" class="btn btn-approve">承認する</button>
+      <button id="btn-edit" class="btn btn-secondary">編集</button>
+      <button id="btn-png" class="btn btn-secondary">PNGでDL</button>
+      <button id="btn-delete" class="btn btn-danger">削除</button>
+    </footer>
+  </div>
+</div>
+
+<!-- ============ 編集モーダル ============ -->
+<div class="modal" id="modal-edit" hidden>
+  <div class="modal-backdrop" data-close></div>
+  <div class="modal-panel">
+    <header class="modal-head">
+      <h2 id="edit-heading" class="modal-heading">新規企画</h2>
+      <button class="icon-btn" data-close aria-label="閉じる">✕</button>
+    </header>
+    <form id="edit-form" class="modal-body">
+      <label class="field">
+        <span class="field-label">タイトル<b class="req">必須</b></span>
+        <input class="input" id="f-title" type="text" maxlength="120" placeholder="例：深夜のコンビニ検証">
+      </label>
+
+      <div class="field">
+        <span class="field-label">区分<b class="req">必須</b></span>
+        <div class="radio-row" id="f-category"></div>
+      </div>
+
+      <div class="field">
+        <span class="field-label">出演メンバー<b class="req">必須</b></span>
+        <label class="check check-all" id="f-all-wrap">
+          <input type="checkbox" id="f-all-members">
+          <span>全員</span>
+        </label>
+        <div class="member-grid" id="f-members"></div>
+        <p class="hint" id="f-members-hint"></p>
+      </div>
+
+      <div class="field">
+        <span class="field-label">動画の形式<b class="req">必須</b></span>
+        <div class="radio-row" id="f-video-type"></div>
+      </div>
+
+      <div class="field">
+        <span class="field-label">参考動画</span>
+        <label class="check">
+          <input type="checkbox" id="f-no-ref">
+          <span>参考動画なし</span>
+        </label>
+        <input class="input" id="f-ref-url" type="url" placeholder="https://youtube.com/...">
+      </div>
+
+      <label class="field">
+        <span class="field-label">台本</span>
+        <textarea class="input textarea" id="f-script" rows="14" placeholder="台本を書く"></textarea>
+      </label>
+
+      <p id="edit-notice" class="notice" hidden>この企画は承認済みです。保存すると<b>未承認</b>に戻ります。</p>
+      <p id="edit-error" class="form-error" hidden></p>
+    </form>
+    <footer class="modal-foot">
+      <button id="btn-save" class="btn btn-primary">保存</button>
+      <button class="btn btn-ghost" data-close>キャンセル</button>
+    </footer>
+  </div>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+
+<script>
+  window.ME = {{ me | tojson }};
+  window.META = {{ meta | tojson }};
+</script>
+<script src="{{ url_for('static', filename='png.js') }}?v=10"></script>
+<script src="{{ url_for('static', filename='app.js') }}?v=10"></script>
+</body>
+</html>
