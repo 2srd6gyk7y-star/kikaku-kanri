@@ -10,9 +10,5 @@ services:
         generateValue: true
       - key: DATABASE_URL
         sync: false
-      - key: APP_BASE_URL
-        sync: false
-      - key: LINE_CHANNEL_ACCESS_TOKEN
-        sync: false
-      - key: LINE_TO
-        sync: false
+# APP_BASE_URL / LINE_CHANNEL_ACCESS_TOKEN / LINE_TO は、
+# 必要になったときに Render のダッシュボードから直接足せばOK（起動には不要）。
