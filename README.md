@@ -101,32 +101,69 @@ pip install -r requirements.txt
 無料の **Render**（アプリ本体）＋ **Supabase**（データベース）の組み合わせが一番手間が少ないです。
 Render の無料プランはファイルが消えるので、データベースは必ず外に置きます。
 
-### 2-1. データベースを用意（Supabase）
+### 2-1. GitHubにプライベートリポジトリを作って上げる
 
-1. https://supabase.com/ で新規プロジェクトを作成
-2. Project Settings → Database → **Connection string (URI)** をコピー
-   （`postgresql://postgres:パスワード@....supabase.com:5432/postgres` の形）
+このフォルダは**すでにGitリポジトリとして初期化＆コミット済み**です。
+残っているのは「GitHub上に空のリポジトリを作って、そこへpushする」だけです。
 
-### 2-2. GitHubに上げる
+1. https://github.com/new を開く
+2. Repository name に `kikaku-kanri`、**Private** を選択
+3. 「Add a README file」などのチェックは**すべて外す**（空のまま作る）
+4. Create repository
+5. 表示されたURLを使って、このフォルダで下記を実行
 
-このフォルダをそのままGitHubのプライベートリポジトリにpushします。
-`.gitignore` があるので `data/` と `.env` は上がりません。
+```bash
+git remote add origin https://github.com/<あなたのユーザー名>/kikaku-kanri.git
+git push -u origin main
+```
+
+`.gitignore` があるので `data/`（ローカルのDB）と `.env` は上がりません。
+
+### 2-2. データベースを用意（Supabase）
+
+1. https://supabase.com/ で新規プロジェクトを作成（Regionは `Northeast Asia (Tokyo)` 推奨）
+2. 作成時に決めた **Database Password** を控えておく
+3. 画面上部の **Connect** → **Session pooler** のURIをコピー
+
+```
+postgresql://postgres.xxxxxxxx:[YOUR-PASSWORD]@aws-0-ap-northeast-1.pooler.supabase.com:5432/postgres
+```
+
+> **重要**：必ず **Session pooler** を使ってください。
+> `db.xxxx.supabase.co` の直接接続はIPv6専用で、Renderからはつながりません。
+
+4. URIの `[YOUR-PASSWORD]` を実際のパスワードに置き換える
+   （`@ : / ? # &` などの記号が入っている場合は、パスワードだけURLエンコードが必要）
 
 ### 2-3. Renderにデプロイ
 
-1. https://render.com/ で New → Web Service → 上のリポジトリを選択
-2. `render.yaml` を自動で読んでくれます（読まない場合は手入力）
+1. https://render.com/ にGitHubアカウントでログイン
+2. New → **Web Service** → 2-1のリポジトリを選択
+3. 設定（`render.yaml` があるので基本は自動で入ります）
+   - Language: `Python 3`
    - Build Command: `pip install -r requirements.txt`
-   - Start Command: `gunicorn app:app --workers 2 --threads 4 --timeout 60`
-3. Environment に以下を設定
+   - Start Command: `gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 60`
+   - Instance Type: `Free`
+4. Environment Variables に以下を設定
 
 | キー | 値 |
 |---|---|
-| `SECRET_KEY` | 長いランダム文字列（Renderの Generate でOK） |
-| `DATABASE_URL` | 2-1でコピーした接続文字列 |
-| `APP_BASE_URL` | デプロイ後のURL（例 `https://kikaku-kanri.onrender.com`） |
+| `SECRET_KEY` | 長いランダム文字列（Renderの **Generate** ボタンでOK） |
+| `DATABASE_URL` | 2-2でコピーした Session pooler のURI |
 
-4. デプロイ完了後のURLをひなぎさんに共有。スマホのホーム画面に追加すると使いやすいです。
+5. Create Web Service → 数分待つ。`https://kikaku-kanri-xxxx.onrender.com` のURLが出れば完了
+6. 出たURLを `APP_BASE_URL` として環境変数に追加（LINE通知の本文にURLを載せるため。今は無くても動きます）
+7. URLをひなぎさんに共有。スマホのSafari/Chromeで開いて「ホーム画面に追加」すると、アプリのように使えます
+
+### うまく動かないときの見方
+
+Renderの **Logs** タブにエラーが出ます。よくあるもの：
+
+| ログの内容 | 原因 |
+|---|---|
+| `could not translate host name` / `Network is unreachable` | 直接接続のURIを使っている → **Session pooler** のURIに変える |
+| `password authentication failed` | パスワードの置き換え漏れ、または記号のURLエンコード漏れ |
+| `No open ports detected` | Start Command の `--bind 0.0.0.0:$PORT` が抜けている |
 
 > **注意**：ログインはパスワードなし（名前を選ぶだけ）なので、**URLを知っている人は誰でも中身を見られます。**
 > URLは2人の間だけで共有してください。もし外部に漏れて困る場合は、合言葉を戻すこともできます。
